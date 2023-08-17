@@ -1,0 +1,9 @@
+/* 
+  Localizable.strings
+  PokeDex
+
+  Created by Aravind Vijayan on 2023-08-17.
+  
+*/
+
+"home.title" = "Pokedex";
