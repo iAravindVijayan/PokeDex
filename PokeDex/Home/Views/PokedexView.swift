@@ -6,42 +6,87 @@
 //
 
 import SwiftUI
+import Combine
 
-struct PokeDexView: View {
+struct PokedexView: View {
+    @StateObject var viewModel: HomeViewModel
+    
+    private var saveTapped = PassthroughSubject<Void, Never>()
+    private var nextTapped = PassthroughSubject<Void, Never>()
+    
+    init(viewModel: HomeViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+        viewModel.process((
+            saveTapped: saveTapped.eraseToAnyPublisher(),
+            nextTapped: nextTapped.eraseToAnyPublisher()
+        ))
+    }
+    
     var body: some View {
         ZStack {
             Color.pokeRed
                 .ignoresSafeArea()
             VStack {
                 HeaderView()
-                AvatarView()
-                DecriptionView()
+                AvatarView(viewModel: viewModel)
+                DecriptionView(viewModel: viewModel)
+                HStack {
+                    Button(UIStrings.save.localized) {
+                        saveTapped.send()
+                    }
+                    .frame(width: 100, height: 60)
+                    .foregroundColor(.white)
+                    .background(Color.darkGray)
+                    .cornerRadius(12)
+                    Spacer()
+                    Button(UIStrings.next.localized) {
+                        nextTapped.send()
+                    }
+                    .frame(width: 100, height: 60)
+                    .foregroundColor(.white)
+                    .background(Color.darkGray)
+                    .cornerRadius(12)
+                }.padding([.leading, .trailing], 32)
+                    .padding(.top)
+                    
             }
-            .padding(EdgeInsets(top: 20, leading: 16, bottom: 98, trailing: 16))
+            .padding(EdgeInsets(top: 20, leading: 16, bottom: 20, trailing: 16))
         }
     }
 }
 
-struct PokeDexView_Previews: PreviewProvider {
+struct PokedexView_Previews: PreviewProvider {
     static var previews: some View {
-        PokeDexView()
+        PokedexView(viewModel: HomeViewModel())
     }
 }
 
 private struct AvatarView: View {
-    @State private var avatar: Image?
+    @StateObject var viewModel: HomeViewModel
+        
+    init(viewModel: HomeViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
     var body: some View {
         ZStack {
             Color.black
             Color.white
                 .padding(EdgeInsets(top: 2, leading: 4, bottom: 4, trailing: 4))
-            PokeLoadingIndicator(size: .medium)
-            if let avatar = avatar {
-                avatar
-                    .padding(EdgeInsets(top: 0, leading: 2, bottom: 2, trailing: 2))
+            AsyncImage(url: viewModel.avatarURL) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                
+            } placeholder: {
+                PokeLoadingIndicator(size: .medium)
             }
+            .padding(EdgeInsets(top: 0, leading: 2, bottom: 2, trailing: 2))
         }
         .padding([.leading, .trailing], 16)
+    }
+    
+    private func setupBindings() {
+            
     }
 }
 
@@ -63,14 +108,18 @@ private struct HeaderView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         self.saved = false
                     }
-                                     
                 }
         }
     }
 }
 
 struct DecriptionView: View {
-    var name: String = "Pikachu"
+    @StateObject var viewModel: HomeViewModel
+    
+    init(viewModel: HomeViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
+    
     var body: some View {
         ZStack {
             Color.gray
@@ -80,7 +129,7 @@ struct DecriptionView: View {
                     Color.retroGreen
                         .cornerRadiusWithBorder(radius: 16)
                         .frame(height: 40)
-                    Text(name)
+                    Text(viewModel.name)
                         .font(.title2)
                 }
                 Spacer()
@@ -89,11 +138,9 @@ struct DecriptionView: View {
                         .border(.black, width: 3)
                     .padding(.bottom)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(name)
+                        Text(viewModel.abilities)
                             .font(.title2)
                             .frame(maxWidth: .infinity,alignment: .leading)
-                        Text(name)
-                            .font(.title2)
                         Spacer()
                     }.padding(.all, 8)
                 }

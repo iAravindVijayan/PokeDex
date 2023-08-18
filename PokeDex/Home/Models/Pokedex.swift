@@ -15,6 +15,11 @@ struct Pokedex: Decodable {
         case pokemonEntries = "pokemon_entries"
         case name
     }
+    
+    init() {
+        pokemonEntries = []
+        name = ""
+    }
 }
 
 
