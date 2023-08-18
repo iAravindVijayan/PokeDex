@@ -9,7 +9,12 @@ import Foundation
 
 struct Abilities: Decodable {
     let name: String
-    let url: String
+    let url: String?
+    
+    init(name: String, url: String? = nil) {
+        self.name = name
+        self.url = url
+    }
     
     enum CodingKeys: String, CodingKey {
         case name

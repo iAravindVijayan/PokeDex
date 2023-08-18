@@ -40,3 +40,12 @@ struct PokemonEntry: Decodable {
         self.name = try pokemonSpecies.decode(String.self, forKey: .name)
     }
 }
+
+extension PokemonEntry: Hashable {
+    init(with coredataModel: PokemonModel) {
+        name = coredataModel.name.unwrapped()
+        id = Int(coredataModel.id)
+    }
+    
+    
+}

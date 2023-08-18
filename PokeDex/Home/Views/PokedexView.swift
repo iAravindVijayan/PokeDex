@@ -9,16 +9,24 @@ import SwiftUI
 import Combine
 
 struct PokedexView: View {
-    @StateObject var viewModel: HomeViewModel
+    @Environment(\.scenePhase) var scenePhase
+    @StateObject var viewModel: PokedexViewModel
     
+    //MARK: Inputs for viewModel
     private var saveTapped = PassthroughSubject<Void, Never>()
     private var nextTapped = PassthroughSubject<Void, Never>()
+    private var tappedPokemon = PassthroughSubject<Int, Never>()
+    private var viewAppeared = PassthroughSubject<Void, Never>()
+    private var viewSavedPokemons = PassthroughSubject<Void, Never>()
     
-    init(viewModel: HomeViewModel) {
+    init(viewModel: PokedexViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
         viewModel.process((
             saveTapped: saveTapped.eraseToAnyPublisher(),
-            nextTapped: nextTapped.eraseToAnyPublisher()
+            nextTapped: nextTapped.eraseToAnyPublisher(),
+            viewAppeared: viewAppeared.eraseToAnyPublisher(),
+            viewSavedPokemons: viewSavedPokemons.eraseToAnyPublisher(),
+            tappedPokemon: tappedPokemon.eraseToAnyPublisher()
         ))
     }
     
@@ -27,126 +35,44 @@ struct PokedexView: View {
             Color.pokeRed
                 .ignoresSafeArea()
             VStack {
-                HeaderView()
-                AvatarView(viewModel: viewModel)
-                DecriptionView(viewModel: viewModel)
-                HStack {
-                    Button(UIStrings.save.localized) {
-                        saveTapped.send()
+                HeaderView(viewModel: viewModel, viewSavedPokemons: viewSavedPokemons)
+                ZStack(alignment: .init(horizontal: .center, vertical: .top)) {
+                    VStack {
+                        AvatarView(viewModel: viewModel)
+                        DescriptionView(viewModel: viewModel)
+                        FooterView(viewModel: viewModel, saveTapped: saveTapped, nextTapped: nextTapped)
                     }
-                    .frame(width: 100, height: 60)
-                    .foregroundColor(.white)
-                    .background(Color.darkGray)
-                    .cornerRadius(12)
-                    Spacer()
-                    Button(UIStrings.next.localized) {
-                        nextTapped.send()
+                    if viewModel.showPokemonList {
+                        List(viewModel.pokemonDatasource, id: \.self) { pokemon in
+                            HStack{
+                                Text(pokemon.name.capitalized)
+                                    .foregroundColor(Color.darkGray)
+                                    .font(.title2)
+                                Spacer()
+                            }
+                            .background(Color.white)
+                            .onTapGesture {
+                                tappedPokemon.send(pokemon.id)
+                            }
+                        }
+                        .background(Color.white)
+                        .frame(height: 200)
+                        .listStyle(PlainListStyle())
+                        .cornerRadiusWithBorder()
                     }
-                    .frame(width: 100, height: 60)
-                    .foregroundColor(.white)
-                    .background(Color.darkGray)
-                    .cornerRadius(12)
-                }.padding([.leading, .trailing], 32)
-                    .padding(.top)
-                    
+                }
             }
-            .padding(EdgeInsets(top: 20, leading: 16, bottom: 20, trailing: 16))
+            .padding(EdgeInsets(top: 0, leading: 16, bottom: 20, trailing: 16))
+        }.onChange(of: scenePhase) { newValue in
+            if newValue == .active {
+                viewAppeared.send()
+            }
         }
     }
 }
 
 struct PokedexView_Previews: PreviewProvider {
     static var previews: some View {
-        PokedexView(viewModel: HomeViewModel())
-    }
-}
-
-private struct AvatarView: View {
-    @StateObject var viewModel: HomeViewModel
-        
-    init(viewModel: HomeViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
-    }
-    var body: some View {
-        ZStack {
-            Color.black
-            Color.white
-                .padding(EdgeInsets(top: 2, leading: 4, bottom: 4, trailing: 4))
-            AsyncImage(url: viewModel.avatarURL) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                
-            } placeholder: {
-                PokeLoadingIndicator(size: .medium)
-            }
-            .padding(EdgeInsets(top: 0, leading: 2, bottom: 2, trailing: 2))
-        }
-        .padding([.leading, .trailing], 16)
-    }
-    
-    private func setupBindings() {
-            
-    }
-}
-
-private struct HeaderView: View {
-    @State var saved = false
-    var body: some View {
-        HStack {
-            Text(UIStrings.homeScreenTitle.localized)
-                .font(.bold(.title)())
-            Spacer()
-            Image("PokeBall")
-                .resizable()
-                .frame(width: 40, height: 40)
-                .offset(x: saved ? -15 : 0, y: saved ? 8 : 0)
-                .scaleEffect(saved ? 1.5 : 1, anchor: .bottomLeading)
-                .animation(.interpolatingSpring(stiffness: 170, damping: 8).delay(0.1), value: saved)
-                .onTapGesture {
-                    self.saved = !self.saved
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        self.saved = false
-                    }
-                }
-        }
-    }
-}
-
-struct DecriptionView: View {
-    @StateObject var viewModel: HomeViewModel
-    
-    init(viewModel: HomeViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
-    }
-    
-    var body: some View {
-        ZStack {
-            Color.gray
-                .cornerRadiusWithBorder()
-            VStack {
-                ZStack {
-                    Color.retroGreen
-                        .cornerRadiusWithBorder(radius: 16)
-                        .frame(height: 40)
-                    Text(viewModel.name)
-                        .font(.title2)
-                }
-                Spacer()
-                ZStack {
-                    Color.retroGreen
-                        .border(.black, width: 3)
-                    .padding(.bottom)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(viewModel.abilities)
-                            .font(.title2)
-                            .frame(maxWidth: .infinity,alignment: .leading)
-                        Spacer()
-                    }.padding(.all, 8)
-                }
-            }
-            .padding([.leading, .trailing, .top], 8)
-        }
-        .frame(height: 200)
+        PokedexView(viewModel: PokedexViewModel())
     }
 }

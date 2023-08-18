@@ -42,3 +42,13 @@ struct Pokemon: Decodable {
         id = try container.decode(Int.self, forKey: .id)
     }
 }
+
+
+extension Pokemon {
+    init(with coredataModel: PokemonModel) {
+        name = coredataModel.name.unwrapped()
+        id = Int(coredataModel.id)
+        abilities = coredataModel.abilities?.components(separatedBy: ", ").map { Abilities(name: $0) } ?? []
+        avatar = coredataModel.avatarURL.unwrapped()
+    }
+}

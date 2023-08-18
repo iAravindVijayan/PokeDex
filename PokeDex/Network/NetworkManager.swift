@@ -9,7 +9,7 @@
 import Combine
 import Foundation
 
-class NetworkManager {
+final class NetworkManager {
     static let shared = NetworkManager()
     
     func sendRequest<Model>(url: URL,
@@ -23,7 +23,7 @@ class NetworkManager {
             .eraseToAnyPublisher()
     }
     
-    func fetchData(url: URL,
+    private func fetchData(url: URL,
                    retryCount: Int = 0,
                    queue: DispatchQueue = .main
     ) -> AnyPublisher<Data, Error> {
