@@ -13,13 +13,9 @@ class NetworkManager {
     static let shared = NetworkManager()
     
     func sendRequest<Model>(url: URL,
-                            parameters: [String: String],
                             retryCount: Int = 0,
                             queue: DispatchQueue = .main
     ) -> AnyPublisher<Model, Error> where Model: Decodable  {
-        var url = url
-        let queryitems = parameters.keys.map { URLQueryItem(name: $0, value: parameters[$0]) }
-        url.append(queryItems: queryitems)
         
         return fetchData(url: url, retryCount: retryCount, queue: queue)
             .decode(type: Model.self, decoder: JSONDecoder())
@@ -33,6 +29,7 @@ class NetworkManager {
     ) -> AnyPublisher<Data, Error> {
         return URLSession.shared.dataTaskPublisher(for: url)
             .tryMap { data, urlResponse in
+                print("******Request******\n URL: ", url.absoluteString)
                 guard let httpResponse = urlResponse as? HTTPURLResponse,
                       (200...300).contains(httpResponse.statusCode) else {
                     throw NetworkError.invalidResponse

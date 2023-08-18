@@ -7,3 +7,6 @@
 */
 
 "home.title" = "Pokedex";
+"home.abilities" = "Abilities: ";
+"home.save" = "Save";
+"home.next" = "Next";

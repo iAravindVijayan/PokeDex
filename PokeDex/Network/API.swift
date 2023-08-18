@@ -6,3 +6,15 @@
 //
 
 import Foundation
+
+let kBaseURL = "https://pokeapi.co/api/v2/"
+
+enum API: String {
+    case pokedex = "pokedex/1/"
+    case evolutionChain = "evolution-chain/%@"
+    case pokemonDetails = "pokemon/%@"
+
+    var urlString: String {
+        return kBaseURL + self.rawValue
+    }
+}
